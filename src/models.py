@@ -1,31 +1,37 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, Table, ForeignKey
+from sqlalchemy import String, Boolean, Table, ForeignKey, Column
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
 from datetime import date
 
 
 class Base(DeclarativeBase):
     pass
-
-
 db = SQLAlchemy(model_class=Base)
 
+Users_to_Posts= Table(
+    "Users_to_Posts",
+    Base.metadata,
+    Column("Users_id", ForeignKey("Users.id")),
+    Column("Posts_id", ForeignKey("Posts.id"))
+)
 
-class Users(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+Users_to_Chats= Table(
+    "Users_to_Posts",
+    Base.metadata,
+    Column("Users_id", ForeignKey("Users.id")),
+    Column("Chats_id", ForeignKey("Chats.id"))
+)
+
+Chats_to_Posts= Table(
+    "Users_to_Posts",
+    Base.metadata,
+    Column("Chats_id", ForeignKey("Chats.id")),
+    Column("Posts_id", ForeignKey("Posts.id"))
+)
 
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
-        }
 
-class User(Base):
+class Users(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
@@ -34,10 +40,11 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False)
     followers: Mapped[int] = mapped_column(nullable=False)
     following: Mapped[int] = mapped_column(nullable=False)
-    post: Mapped[int] = mapped_column(nullable=False)
+    post:  Mapped[list["Posts"]] = relationship(back_populate="Post",secondary= Users_to_Posts,)
+    post_id:Mapped[int] = mapped_column(ForeignKey("post.id"))
     profile_pic: Mapped[str] = mapped_column(String())
-
-
+    chats: Mapped[list["Chats"]] = relationship(back_populate="Chats",secondary=Users_to_Chats,)
+    chats_id:Mapped[int] = mapped_column(ForeignKey("chats.id"))
     def serialize(self):
         return {
             "id": self.id,
@@ -49,14 +56,18 @@ class User(Base):
             "followers": self.followers,
             "following": self.following,
             "post": self.post,
-            "profile_pic": self.profile_pic
+            "profile_pic": self.profile_pic,
+            "chats": self.chats
             # do not serialize the password, its a security breach
         }
-class post(Base):
+    
+class Posts(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
-    post_user: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    user:  Mapped[list["Users"]] = relationship(back_populate="Users",secondary=Users_to_Posts,)
+    user_id:Mapped[int] = mapped_column(ForeignKey("user.id"))
     liked: Mapped[int] 
-    chat_response: Mapped[int] 
+    chat:  Mapped[list["Chats"]] = relationship(back_populate="Chats",secondary=Chats_to_Posts,)
+    chat_id:Mapped[int] = mapped_column(ForeignKey("chat.id"))
     date_posted: Mapped[date] 
     saved: Mapped[int]
     shared_link: Mapped[int]
@@ -75,12 +86,16 @@ class post(Base):
             "hashtags": self.hashtags
             # do not serialize the password, its a security breach
         }    
-class Chat(Base):
+    
+class Chats(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     chat_message: Mapped[str]
-    user_posted: Mapped[str] = mapped_column(nullable=False)
+    user:  Mapped[list["Users"]] = relationship(back_populate="Users",secondary=Users_to_Chats,)
+    user_id:Mapped[int] = mapped_column(ForeignKey("user.id"))
     like: Mapped[int]
     user_profile_pic:Mapped[str]
+    posts: Mapped[list["Posts"]] = relationship(back_populate="Posts",secondary=Chats_to_Posts,)
+    posts_id:Mapped[int] = mapped_column(ForeignKey("posts.id"))
 
 
     def serialize(self):
