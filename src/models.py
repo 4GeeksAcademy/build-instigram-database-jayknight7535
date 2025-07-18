@@ -16,14 +16,14 @@ Users_to_Posts= Table(
 )
 
 Users_to_Chats= Table(
-    "Users_to_Posts",
+    "Users_to_Chats",
     Base.metadata,
     Column("Users_id", ForeignKey("Users.id")),
     Column("Chats_id", ForeignKey("Chats.id"))
 )
 
 Chats_to_Posts= Table(
-    "Users_to_Posts",
+    "Chats_to_Posts",
     Base.metadata,
     Column("Chats_id", ForeignKey("Chats.id")),
     Column("Posts_id", ForeignKey("Posts.id"))
@@ -32,6 +32,7 @@ Chats_to_Posts= Table(
 
 
 class Users(Base):
+    __tablename__ = "User"
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
@@ -40,10 +41,10 @@ class Users(Base):
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False)
     followers: Mapped[int] = mapped_column(nullable=False)
     following: Mapped[int] = mapped_column(nullable=False)
-    post:  Mapped[list["Posts"]] = relationship(back_populate="Post",secondary= Users_to_Posts,)
+    post:  Mapped[list["Posts"]] = relationship(back_populates="Post",secondary= Users_to_Posts,)
     post_id:Mapped[int] = mapped_column(ForeignKey("post.id"))
     profile_pic: Mapped[str] = mapped_column(String())
-    chats: Mapped[list["Chats"]] = relationship(back_populate="Chats",secondary=Users_to_Chats,)
+    chats: Mapped[list["Chats"]] = relationship(back_populates="Chats",secondary=Users_to_Chats,)
     chats_id:Mapped[int] = mapped_column(ForeignKey("chats.id"))
     def serialize(self):
         return {
@@ -62,11 +63,12 @@ class Users(Base):
         }
     
 class Posts(Base):
+    __tablename__ = "Posts"
     id: Mapped[int] = mapped_column(primary_key=True)
-    user:  Mapped[list["Users"]] = relationship(back_populate="Users",secondary=Users_to_Posts,)
+    user:  Mapped[list["Users"]] = relationship(back_populates="Users",secondary=Users_to_Posts,)
     user_id:Mapped[int] = mapped_column(ForeignKey("user.id"))
     liked: Mapped[int] 
-    chat:  Mapped[list["Chats"]] = relationship(back_populate="Chats",secondary=Chats_to_Posts,)
+    chat:  Mapped[list["Chats"]] = relationship(back_populates="Chats",secondary=Chats_to_Posts,)
     chat_id:Mapped[int] = mapped_column(ForeignKey("chat.id"))
     date_posted: Mapped[date] 
     saved: Mapped[int]
@@ -88,13 +90,14 @@ class Posts(Base):
         }    
     
 class Chats(Base):
+    __tablename__ = "Chats"
     id: Mapped[int] = mapped_column(primary_key=True)
     chat_message: Mapped[str]
-    user:  Mapped[list["Users"]] = relationship(back_populate="Users",secondary=Users_to_Chats,)
+    user:  Mapped[list["Users"]] = relationship(back_populates="Users",secondary=Users_to_Chats,)
     user_id:Mapped[int] = mapped_column(ForeignKey("user.id"))
     like: Mapped[int]
     user_profile_pic:Mapped[str]
-    posts: Mapped[list["Posts"]] = relationship(back_populate="Posts",secondary=Chats_to_Posts,)
+    posts: Mapped[list["Posts"]] = relationship(back_populates="Posts",secondary=Chats_to_Posts,)
     posts_id:Mapped[int] = mapped_column(ForeignKey("posts.id"))
 
 
